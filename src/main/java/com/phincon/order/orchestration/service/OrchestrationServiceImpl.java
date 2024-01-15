@@ -47,7 +47,7 @@ public class  OrchestrationServiceImpl implements OrchestrationService {
         steps.subscribe(steps1 -> processStep(steps1));
     }
 
-    private void processStep(Steps step) {
+    void processStep(Steps step) {
         String stepName = step.getSteps();
         if (stepActions.containsKey(stepName)) {
             stepActions.get(stepName).accept(orderNew);
