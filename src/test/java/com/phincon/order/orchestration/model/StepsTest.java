@@ -14,6 +14,7 @@ class StepsTest {
         assertEquals("1", steps.getId());
         assertEquals("1", steps.getActionId());
         assertEquals("step", steps.getSteps());
+        assertEquals("s", steps.getQueue());
         assertEquals(1, steps.getPriority());
     }
 
@@ -23,10 +24,12 @@ class StepsTest {
         steps.setId("1");
         steps.setActionId("1");
         steps.setSteps("step");
+        steps.setQueue("s");
         steps.setPriority(1);
         assertEquals("1", steps.getId());
         assertEquals("1", steps.getActionId());
         assertEquals("step", steps.getSteps());
+        assertEquals("s", steps.getQueue());
         assertEquals(1, steps.getPriority());
     }
 }
