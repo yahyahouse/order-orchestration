@@ -1,7 +1,5 @@
 package com.phincon.order.orchestration.model;
 
-import lombok.Data;
-
 public class Orders {
     String id;
     String productId;
