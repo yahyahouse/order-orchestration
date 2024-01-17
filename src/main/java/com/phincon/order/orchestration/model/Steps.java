@@ -14,6 +14,7 @@ public class Steps {
     String id;
     String actionId;
     String steps;
+    String queue;
     Integer priority;
 
 
@@ -49,10 +50,19 @@ public class Steps {
         this.priority = priority;
     }
 
-    public Steps(String id, String actionId, String steps, Integer priority) {
+    public String getQueue() {
+        return queue;
+    }
+
+    public void setQueue(String queue) {
+        this.queue = queue;
+    }
+
+    public Steps(String id, String actionId, String steps, String queue, Integer priority) {
         this.id = id;
         this.actionId = actionId;
         this.steps = steps;
+        this.queue = queue;
         this.priority = priority;
     }
 
