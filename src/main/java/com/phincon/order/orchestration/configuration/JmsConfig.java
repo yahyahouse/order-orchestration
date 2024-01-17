@@ -50,7 +50,7 @@ public class JmsConfig {
     public ActiveMQConnectionFactory jmsConnectionFactory() {
         ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
         connectionFactory.setBrokerURL(brokerUrl);
-        connectionFactory.setTrustedPackages(List.of("com.pinchon.order.orchestration"));
+        connectionFactory.setTrustedPackages(List.of("com.phincon.order.orchestration"));
         return connectionFactory;
     }
 }
