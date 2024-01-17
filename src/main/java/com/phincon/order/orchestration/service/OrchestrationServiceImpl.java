@@ -3,57 +3,54 @@ package com.phincon.order.orchestration.service;
 import com.phincon.order.orchestration.model.Orders;
 import com.phincon.order.orchestration.model.Steps;
 import com.phincon.order.orchestration.repository.OrchestrationRepository;
-import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.annotation.JmsListener;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
+import reactor.core.publisher.Mono;
 
 @Service
 @Slf4j
-public class  OrchestrationServiceImpl implements OrchestrationService {
+public class OrchestrationServiceImpl implements OrchestrationService {
     @Autowired
     OrchestrationRepository orchestrationRepository;
 
     @Autowired
     OrchestrationStep orchestrationStep;
 
-    private final Map<String, Consumer<Orders>> stepActions = new ConcurrentHashMap<>();
-    Orders orderNew = new Orders();
+    @Autowired
+    JmsTemplate jmsTemplate;
 
-    private void addStepAction(String stepName, Consumer<Orders> action) {
-        stepActions.put(stepName, action);
+    Mono<String> status = Mono.just("Success");
+
+    @JmsListener(destination = "queue.status")
+    public void status(Message<String> statusMessage) {
+        log.info("Status received: " + statusMessage.getPayload());
+        status = Mono.just(statusMessage.getPayload());
+        log.info("Status: " + status.block());
     }
 
-    @PostConstruct
-    private void initializeStepActions() {
-        addStepAction("crm", orchestrationStep::crm);
-        addStepAction("notif", orchestrationStep::notif);
-        addStepAction("complete", orchestrationStep::complete);
-        addStepAction("failed", orchestrationStep::failed);
-    }
 
     @JmsListener(destination = "queue.order")
     public void processOrder(Message<Orders> ordersMessage) {
-        orderNew = ordersMessage.getPayload();
-        log.info("Order received: " + orderNew);
-        Flux<Steps> steps = getAction(orderNew.getActionId());
-        steps.subscribe(steps1 -> processStep(steps1));
+        ordersMessage.getPayload().setStatus(status.block());
+        log.info("Order received: " + ordersMessage.getPayload());
+        Flux<Steps> steps = getAction(ordersMessage.getPayload().getActionId());
+        steps.subscribe(x -> status.filter(s -> s.equals("Success")).subscribe(
+                s -> processStep(x, ordersMessage.getPayload()).subscribe()
+        ));
     }
 
-    void processStep(Steps step) {
-        String stepName = step.getSteps();
-        if (stepActions.containsKey(stepName)) {
-            stepActions.get(stepName).accept(orderNew);
-        } else {
-            handleUnknownStep(orderNew);
+    Mono<Void> processStep(Steps step, Orders order) {
+        if (step.getQueue().equals("queue.complete")) {
+            order.setStatus("Completed");
+            send(step.getQueue(), order).subscribe();
         }
+        send(step.getQueue(), order).subscribe();
+        return Mono.empty();
     }
 
     @Override
@@ -61,11 +58,11 @@ public class  OrchestrationServiceImpl implements OrchestrationService {
         return orchestrationRepository.findByActionId(actionId);
     }
 
-    private void handleUnknownStep(Orders order) {
-        log.warn("Unknown step");
-        log.info("Order Failed " + order.getStatus());
+    public Mono<Orders> send(String queue, Orders order) {
+        log.info("Order Process: " + order.getStatus());
+        jmsTemplate.convertAndSend(queue, order);
+        return Mono.just(order);
     }
-
 
 
 }
