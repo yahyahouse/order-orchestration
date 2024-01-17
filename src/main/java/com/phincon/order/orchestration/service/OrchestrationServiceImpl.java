@@ -18,8 +18,6 @@ public class OrchestrationServiceImpl implements OrchestrationService {
     @Autowired
     OrchestrationRepository orchestrationRepository;
 
-    @Autowired
-    OrchestrationStep orchestrationStep;
 
     @Autowired
     JmsTemplate jmsTemplate;
